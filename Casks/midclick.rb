@@ -12,18 +12,25 @@ cask "midclick" do
     strategy :github_latest
   end
 
-  depends_on macos: ">= :monterey"
+  depends_on macos: :monterey
 
   app "MidClick.app"
 
-  # The app is not notarized, so clear the download quarantine, then launch it so the
-  # one-switch setup window appears right away.
-  postflight do
-    system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{appdir}/MidClick.app"]
-    system_command "/usr/bin/open", args: ["#{appdir}/MidClick.app"]
+  # The app is not notarized, so clear the download quarantine to let it open without a Gatekeeper prompt.
+  postflight_steps do
+    run "/usr/bin/xattr",
+        args:           ["-dr", "com.apple.quarantine", "{{appdir}}/MidClick.app"],
+        writable_paths: ["MidClick.app"],
+        writable_base:  :appdir,
+        must_succeed:   false
   end
 
   uninstall quit: "io.github.keyboord01.MidClick"
 
   zap trash: "~/Library/Preferences/io.github.keyboord01.MidClick.plist"
+
+  caveats <<~EOS
+    Start MidClick and flip the switch in the window that opens:
+      open -a MidClick
+  EOS
 end
